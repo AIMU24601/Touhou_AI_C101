@@ -5,6 +5,9 @@ import numpy as np
 import cv2
 import pynput
 import win32gui
+import os
+import neat
+import visualize
 
 from PIL import ImageGrab
 
@@ -114,7 +117,10 @@ def screen_shot():
 
 def main():
     try:
-        state, template = screen_shot()
+        local_dir = os.path.dirname(__file__)
+        config_path = os.path.join(local_dir, 'config-feedforward')
+        run(config_path)
+        input, template = screen_shot()
     except KeyboardInterrupt:
         sys.exit()
 
