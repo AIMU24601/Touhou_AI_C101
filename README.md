@@ -5,6 +5,7 @@ C101にて発表予定の東方Project自動攻略AIです。
 予定
 ・Neuroevolution
 　CNE　NEAT　HYPERNEAT　DQNの比較？
+　RNNも使えるようだが少し難しそうなので検討
 　
 ・強化学習
 　Neuroevolutionと比較してRNNとかを使ってDQNをやる
