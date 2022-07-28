@@ -117,10 +117,7 @@ def screen_shot():
 
 def main():
     try:
-        local_dir = os.path.dirname(__file__)
-        config_path = os.path.join(local_dir, 'config-feedforward')
-        run(config_path)
-        input, template = screen_shot()
+        screen_shot()
     except KeyboardInterrupt:
         sys.exit()
 
