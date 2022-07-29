@@ -2,6 +2,7 @@ from random import random
 import cv2
 from PIL import Image
 import random
+from cv2 import imwrite
 import numpy as np
 
 number_player = 1
@@ -13,14 +14,6 @@ player_list = list()
 enemy_list = list()
 bullet_list = list()
 
-img = cv2.imread("C:/touhou/data/7/enemy/10.png")
-print(type(img))
-print(img.shape)
-for i in range(len(img)):
-    for j in range(len(img[0])):
-        pass
-        #print(img[i][j])
-print(img.sum(axis=2))
 img = cv2.imread("screenshot.jpg")
 row = len(img)
 column = len(img[0])
@@ -28,9 +21,9 @@ column = len(img[0])
 #画像を貼り付ける所を作成
 train = np.zeros((row, column))
 train = train + 31
+eval = np.zeros((row, column, 4))
 #ndarrayはcv2で使うものなのでPILに変換する
 train = Image.fromarray(train, "RGBA")
-eval = train
 
 im = Image.open("C:/touhou/data/7/player/1.png")
 
@@ -48,6 +41,19 @@ for i in range(number_player):
     print(im)
     print(train)
     train.save("C:/touhou/train/7/1.png")
+    w, h = im.size
+    for j in range(y, y+h):
+        for k in range(x, x+w):
+            if j < row and k < column:
+                tmp = train.getpixel((k, j))
+                if tmp[0] != 31:
+                    eval[j][k] = [1, 0, 0, 0]
+    eval_save = np.zeros((row, column, 3))
+    for j in range(row):
+        for k in range(column):
+            if eval[j][k][0] == 1:
+                eval_save[j][k] = [255, 0, 0]
+    cv2.imwrite("C:/touhou/eval/7/1.png", eval_save)
 
 e = random.randint(min_number_enemy, max_number_enemy)
 for i in range(e):
