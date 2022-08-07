@@ -2,9 +2,7 @@ from random import random
 import cv2
 from PIL import Image
 import random
-from cv2 import imwrite
 import numpy as np
-from torch import alpha_dropout
 
 number_player = 1
 min_number_enemy = 1
@@ -32,7 +30,6 @@ for i in range(1, 173):
 img = cv2.imread("screenshot.jpg")
 row = len(img)
 column = len(img[0])
-
 
 def ThGen(t):
     #画像を貼り付ける所を作成
@@ -102,11 +99,16 @@ def ThGen(t):
             for k in range(column):
                 if eval[j][k][0] == 1:
                     eval_save[j][k] = [255, 0, 0]
-                if eval[j][k][1] == 1:
+                elif eval[j][k][1] == 1:
                     eval_save[j][k] = [0,255, 0]
-                if eval[j][k][2] == 1:
+                elif eval[j][k][2] == 1:
                     eval_save[j][k] = [0, 0, 255]
+                else:
+                    eval[j][k] = [0, 0, 0, 1] #どのクラスにも属しない
     cv2.imwrite("C:/touhou/eval_img/7/" + str(t) + ".png", eval_save)
 
-for i in range(100):
-    ThGen(i)
+if __name__ == "__main__":
+    for i in range(0, 20000):
+        ThGen(i)
+        if i %1000 == 0:
+            print(i)
