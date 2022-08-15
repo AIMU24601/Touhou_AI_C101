@@ -66,6 +66,7 @@ mea = mea/(160*120)
 
 #print(mea)
 # mean [17.41039304 17.81785532 18.53550618] BGRなので注意
+# mean [18.5, 17.8, 17.4] RGB
 
 for i in range(3):
     img.append(cv2.resize(cv2.imread(train_d[i]), dsize=(120,160)))
@@ -92,4 +93,5 @@ s = np.sum(np.sum(np.sum(img,axis=0),axis=0),axis=0)
 std = s/(160*120)
 print(std.shape)
 print(std)
-# std [0.35001241 0.36715648 0.39789724]
+# std [0.35001241 0.36715648 0.39789724] BGRなので注意
+# std [0.398, 0.367, 0.350] RGB
