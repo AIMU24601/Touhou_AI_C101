@@ -26,16 +26,6 @@ test_d = [os.path.join(test_dir, img_id) for img_id in x_test_ids]
 
 """
 for i in range(len(train_d)):
-    img.append(cv2.resize(cv2.imread(train_d[i]), dsize=(160,120)))
-    print(i)
-for i in range(len(valid_d)):
-    img.append(cv2.resize(cv2.imread(valid_d[i]), dsize=(160,120)))
-for i in range(len(test_d)):
-    img.append(cv2.resize(cv2.imread(test_d[i]), dsize=(160,120)))
-"""
-
-"""
-for i in range(len(train_d)):
     img.append(cv2.resize(cv2.imread(train_d[i]), dsize=(120,160)))
     print(i)
 for i in range(len(valid_d)):
@@ -68,9 +58,14 @@ mea = mea/(160*120)
 # mean [17.41039304 17.81785532 18.53550618] BGRなので注意
 # mean [18.5, 17.8, 17.4] RGB
 
-for i in range(3):
+"""
+for i in range(len(train_d)):
     img.append(cv2.resize(cv2.imread(train_d[i]), dsize=(120,160)))
     print(i)
+for i in range(len(valid_d)):
+    img.append(cv2.resize(cv2.imread(valid_d[i]), dsize=(120,160)))
+for i in range(len(test_d)):
+    img.append(cv2.resize(cv2.imread(test_d[i]), dsize=(120,160)))
 
 img = np.array(img)
 print(img.shape)
@@ -81,7 +76,7 @@ tmp = np.stack([mean for _ in range(120)], axis=0)
 print(tmp.shape)
 tmp_2 = np.stack([tmp for _ in range(160)], axis=0)
 print(tmp_2.shape)
-tmp_3 = np.stack([tmp_2 for _ in range(3)], axis=0)
+tmp_3 = np.stack([tmp_2 for _ in range(len(train_d)+len(valid_d)+len(test_d))], axis=0)
 print(tmp_3.shape)
 
 img = img - tmp_3
@@ -90,8 +85,13 @@ print(img.shape)
 
 img = img/(len(train_d)+len(valid_d)+len(test_d))
 s = np.sum(np.sum(np.sum(img,axis=0),axis=0),axis=0)
-std = s/(160*120)
-print(std.shape)
+var= s/(160*120)
+print(var.shape)
+print(var)
+"""
+# var [3024.09503826 3103.64208278 3277.34470531] BGRなので注意
+var = np.array([3024.09503826, 3103.64208278, 3277.34470531])
+std = var ** (1/2)
 print(std)
-# std [0.35001241 0.36715648 0.39789724] BGRなので注意
-# std [0.398, 0.367, 0.350] RGB
+# std [54.99177246 55.7103409  57.24809783] BGRなので注意
+# std [57.3, 55.7, 55.0] RGB
