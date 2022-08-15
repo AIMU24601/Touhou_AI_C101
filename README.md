@@ -32,3 +32,10 @@ Windows10にPyTorch1.10とCUDA11.3の環境を作る
 Kerasを勉強した後にPyTorchを勉強して躓いたこと
 　https://takuroooooo.hatenablog.com/entry/2020/10/30/Keras%E3%82%92%E5%8B%89%E5%BC%B7%E3%81%97%E3%81%9F%E5%BE%8C%E3%81%ABPyTorch%E3%82%92%E5%8B%89%E5%BC%B7%E3%81%97%E3%81%A6%E8%BA%93%E3%81%84%E3%81%9F%E3%81%93%E3%81%A8
 
+画像のパディング
+OpenCVでzero-paddingを1行でする方法
+　https://qiita.com/sota0726/items/540d3be3e570cbca644e
+
+numpyのパディング
+numpy.pad関数完全理解
+　https://qiita.com/kuroitu/items/51f4c867c8a44de739ec
