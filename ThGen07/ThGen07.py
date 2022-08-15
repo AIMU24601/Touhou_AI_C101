@@ -15,26 +15,26 @@ bullet_list = list()
 
 #貼り付ける画像をロード
 for i in range(1, 23):
-    tmp = Image.open("C:/touhou/data/7/player_tmp/" + str(i) + ".png")
+    tmp = Image.open("E:/touhou/data/7/player_tmp/" + str(i) + ".png")
     player_list.append(tmp)
 
 for i in range(1, 375):
-    tmp = Image.open("C:/touhou/data/7/enemy_tmp/" + str(i) + ".png")
+    tmp = Image.open("E:/touhou/data/7/enemy_tmp/" + str(i) + ".png")
     enemy_list.append(tmp)
 
 for i in range(1, 173):
-    tmp = Image.open("C:/touhou/data/7/bullet_tmp/" + str(i) + ".png")
+    tmp = Image.open("E:/touhou/data/7/bullet_tmp/" + str(i) + ".png")
     bullet_list.append(tmp)
 
 #ゲームのスクリーンショットにサイズを合わせる
-img = cv2.imread("screenshot.jpg")
+img = cv2.imread("../screenshot.jpg")
 row = len(img)
 column = len(img[0])
 
 def ThGen(t):
     #画像を貼り付ける所を作成
     train = np.zeros((row, column))
-    eval = np.zeros((row, column, 4))
+    annot = np.zeros((row, column)) # 0 means this pixel does not belong to any classes
     #ndarrayはcv2で使うものなのでPILに変換する
     train = Image.fromarray(train, "RGBA")
 
@@ -51,7 +51,7 @@ def ThGen(t):
                 if j < row and k < column:
                     tmp = train.getpixel((k, j))
                     if sum(tmp) >= (120+255):
-                        eval[j][k] = [0, 1, 0, 0]
+                        annot[j][k] = 2 #one-hot of enemy
 
     b = random.randint(min_number_bullet, max_munber_bullet)
     for i in range(b):
@@ -67,7 +67,7 @@ def ThGen(t):
                 if j < row and k < column:
                     tmp = train.getpixel((k, j))
                     if sum(tmp) >= (120+255):
-                        eval[j][k] = [0, 0, 1, 0]
+                        annot[j][k] = 3 #one-hot of bullet
 
     p = random.randint(number_player, number_player)
     for i in range(p):
@@ -89,26 +89,24 @@ def ThGen(t):
                 if j < row and k < column:
                     tmp = train.getpixel((k, j))
                     if sum(tmp) >= (120+255):
-                        eval[j][k] = [1, 0, 0, 0]
+                        annot[j][k] = 1 #one-hot of player
 
-    train.save("C:/touhou/train/7/" + str(t) + ".png")
-    np.save("C:/touhou/eval/7/" + str(t) + ".png", eval)
+    train.save("E:/touhou/train/7/" + str(t) + ".png")
+    np.save("E:/touhou/train_annot/7/" + str(t) + ".png", annot)
 
     eval_save = np.zeros((row, column, 3))
     for j in range(row):
             for k in range(column):
-                if eval[j][k][0] == 1:
+                if annot[j][k] == 1: # this pixel belongs to player class
                     eval_save[j][k] = [255, 0, 0]
-                elif eval[j][k][1] == 1:
+                elif annot[j][k] == 2: # this pixel belongs to enemy class
                     eval_save[j][k] = [0,255, 0]
-                elif eval[j][k][2] == 1:
+                elif annot[j][k] == 3: # this pixel belongs to bullet class
                     eval_save[j][k] = [0, 0, 255]
-                else:
-                    eval[j][k] = [0, 0, 0, 1] #どのクラスにも属しない
-    cv2.imwrite("C:/touhou/eval_img/7/" + str(t) + ".png", eval_save)
+    cv2.imwrite("E:/touhou/annot_img/7/" + str(t) + ".png", eval_save)
 
 if __name__ == "__main__":
-    for i in range(0, 20000):
+    for i in range(0, 21101):
         ThGen(i)
-        if i %1000 == 0:
+        if i %100 == 0:
             print(i)
