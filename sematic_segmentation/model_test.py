@@ -22,7 +22,7 @@ from tqdm import tqdm
 import time
 import segmentation_models_pytorch as smp
 
-DATA_DIR = "E:/touhou/resize/"
+DATA_DIR = "E:/touhou/resize/with_background/"
 
 x_test_dir = os.path.join(DATA_DIR, "test/7")
 y_test_dir = os.path.join(DATA_DIR, "test_annot/7")
@@ -70,9 +70,11 @@ class testDataset(BaseDataset):
     def __getitem__(self, i):
 
         # read data
-        image = cv2.copyMakeBorder(cv2.imread(self.images_fps[i]),0,0,0,8,cv2.BORDER_CONSTANT,value=(0,0,0)) #(160,128) 32で割り切れるように右をゼロパディング
+        #image = cv2.copyMakeBorder(cv2.imread(self.images_fps[i]),0,0,0,8,cv2.BORDER_CONSTANT,value=(0,0,0)) #(160,128) 32で割り切れるように右をゼロパディング
+        image = cv2.imread(self.images_fps[i])
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        mask = np.pad(np.load(self.masks_fps[i]),((0,0),(0,8))) #画像サイズに合わせてパディング
+        #mask = np.pad(np.load(self.masks_fps[i]),((0,0),(0,8))) #画像サイズに合わせてパディング
+        mask = np.load(self.masks_fps[i])
 
         # apply augmentations
         if self.augmentation:
@@ -197,7 +199,7 @@ if __name__ == "__main__":
 )
 
     print("Model Loading...")
-    model = torch.load("Unet-_mIoU-0.919.pt")
+    model = torch.load("Unet-_mIoU-back-0.493.pt")
     print("Done")
     test_dataloader = DataLoader(test_dataset)
 
