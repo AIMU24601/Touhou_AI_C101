@@ -51,3 +51,7 @@ https://qiita.com/nigo1973/items/c62578fccc7230ba48f8
 画像分類・物体検出・セグメンテーションの比較
 　https://data-analysis-stats.jp/%E6%B7%B1%E5%B1%9E%E5%AD%A6%E7%BF%92/%E7%94%BB%E5%83%8F%E5%88%86%E9%A1%9E%E3%83%BB%E7%89%A9%E4%BD%93%E6%A4%9C%E5%87%BA%E3%83%BB%E3%82%BB%E3%82%B0%E3%83%A1%E3%83%B3%E3%83%86%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E6%AF%94%E8%BC%83/
 
+cv2→tensor→画像の際に気を付けること
+pyTorchのTensor型とは
+　https://qiita.com/mathlive/items/241bfb42d852bb801b96
+
