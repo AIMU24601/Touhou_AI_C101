@@ -1,5 +1,6 @@
 import os
 import sys
+from tkinter import image_names
 
 import numpy as np
 import cv2
@@ -36,8 +37,10 @@ CLASSES = ["background","player", "enemy", "bullet"]
 #torch.set_printoptions(edgeitems=1000000)
 
 class Dataset(BaseDataset):
-    mean = [90.9, 72.69, 86.76]
-    std = [73.8, 70.29, 70.12]
+    #mean = [90.9, 72.69, 86.76]
+    mean = np.mean([90.9, 72.69, 86.76])
+    #std = [73.8, 70.29, 70.12]
+    std = np.mean([73.8, 70.29, 70.12]) #グレースケール用
 
     CLASSES = ["background","player", "enemy", "bullet"]
 
@@ -54,7 +57,8 @@ class Dataset(BaseDataset):
     def __getitem__(self, i):
         #image = cv2.copyMakeBorder(cv2.imread(self.images_fps[i]),0,0,0,8,cv2.BORDER_CONSTANT,value=(0,0,0)) #(160,128) 32で割り切れるように右をゼロパディング
         image = cv2.imread(self.images_fps[i])
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) #グレースケール用
         #mask = np.pad(np.load(self.masks_fps[i]),((0,0),(0,8))) #画像サイズに合わせてパディング
         mask = np.load(self.masks_fps[i])
         """
@@ -194,7 +198,7 @@ def fit(epochs, model, train_loader, val_loader, criterion, optimizer, scheduler
                 decrease += 1
                 if decrease % 1 == 0:
                     print("saving model...")
-                    torch.save(model, 'Unet-_mIoU-back-{:.3f}.pt'.format(val_iou_score/len(val_loader))) #Train途中もモデルを保存するときは実行する
+                    torch.save(model, 'model/gray/Unet-_mIoU-{:.3f}.pt'.format(val_iou_score/len(val_loader))) #Train途中もモデルを保存するときは実行する
 
             if (test_loss/len(val_loader)) > min_loss:
                 not_improve += 1
@@ -257,7 +261,8 @@ if __name__ == "__main__":
     """
 
     print("Model Setup...")
-    model = smp.Unet("efficientnet-b4", encoder_weights="imagenet", classes=len(CLASSES), activation=None)
+    #model = smp.Unet("efficientnet-b4", encoder_weights="imagenet", classes=len(CLASSES), activation=None)
+    model = smp.Unet("efficientnet-b4", encoder_weights="imagenet", classes=len(CLASSES), activation=None, in_channels=1) #グレースケール用
     print("Done")
 
     print("Dataset Loading...")

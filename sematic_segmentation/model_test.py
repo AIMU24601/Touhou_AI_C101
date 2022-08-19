@@ -72,7 +72,8 @@ class testDataset(BaseDataset):
         # read data
         #image = cv2.copyMakeBorder(cv2.imread(self.images_fps[i]),0,0,0,8,cv2.BORDER_CONSTANT,value=(0,0,0)) #(160,128) 32で割り切れるように右をゼロパディング
         image = cv2.imread(self.images_fps[i])
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         #mask = np.pad(np.load(self.masks_fps[i]),((0,0),(0,8))) #画像サイズに合わせてパディング
         mask = np.load(self.masks_fps[i])
 
@@ -136,8 +137,10 @@ def mIoU(pred_mask, mask, smooth=1e-10, n_classes=len(CLASSES)):
         return np.nanmean(iou_per_class)
 
 def predict_image_mask_miou(model, image, mask):
-    mean = [18.5, 17.8, 17.4]
-    std = [57.3, 55.7, 55.0]
+    #mean = [18.5, 17.8, 17.4]
+    mean = np.mean([18.5, 17.8, 17.4])
+    #std = [57.3, 55.7, 55.0]
+    std = np.mean([57.3, 55.7, 55.0])
     model.eval()
     t = T.Compose([T.ToTensor(), T.Normalize(mean, std)])
     image = t(image)
@@ -155,8 +158,10 @@ def predict_image_mask_miou(model, image, mask):
     return masked, score
 
 def predict_image_mask_pixel(model, image, mask):
-    mean = [18.5, 17.8, 17.4]
-    std = [57.3, 55.7, 55.0]
+    #mean = [18.5, 17.8, 17.4]
+    mean = np.mean([18.5, 17.8, 17.4])
+    #std = [57.3, 55.7, 55.0]
+    std = np.mean([57.3, 55.7, 55.0])
     model.eval()
     t = T.Compose([T.ToTensor(), T.Normalize(mean, std)])
     image = t(image)
@@ -199,7 +204,7 @@ if __name__ == "__main__":
 )
 
     print("Model Loading...")
-    model = torch.load("Unet-_mIoU-back-0.493.pt")
+    model = torch.load("model/gray/Unet-_mIoU-0.710.pt")
     print("Done")
     test_dataloader = DataLoader(test_dataset)
 
