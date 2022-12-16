@@ -278,6 +278,7 @@ if __name__ == "__main__":
     weight_decay = 1e-4
 
     criterion = nn.CrossEntropyLoss()
+    #criterion =
     optimizer = torch.optim.AdamW(model.parameters(), lr=max_lr, weight_decay=weight_decay)
     sched = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr, epochs=epoch, steps_per_epoch=len(train_loader))
 

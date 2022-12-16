@@ -5,6 +5,7 @@ import random
 import numpy as np
 import math
 import os
+from tqdm import tqdm
 
 number_player = 1
 min_number_enemy = 1
@@ -157,7 +158,7 @@ def ThGen(t):
     bg.save("E:/touhou/resize/with_background/train/7/"+str(t)+".png")
 
 if __name__ == "__main__":
-    for i in range(0, 20):
+    for i in tqdm(range(0, 21100)):
         ThGen(i)
         if i %100 == 0:
             print(i)
