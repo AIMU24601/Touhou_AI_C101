@@ -55,3 +55,12 @@ cv2→tensor→画像の際に気を付けること
 pyTorchのTensor型とは
 　https://qiita.com/mathlive/items/241bfb42d852bb801b96
 
+IouとmIoUの参考
+https://www.jstage.jst.go.jp/article/pjsai/JSAI2021/0/JSAI2021_3D2OS12b03/_pdf
+
+セマンティックセグメンテーションの説明
+https://medium.com/@hei4/pytorch%E5%88%9D%E5%BF%83%E8%80%85%E3%81%AE%E3%81%9F%E3%82%81%E3%81%AEmnist%E3%82%BB%E3%83%9E%E3%83%B3%E3%83%86%E3%82%A3%E3%83%83%E3%82%AF%E3%82%BB%E3%82%B0%E3%83%A1%E3%83%B3%E3%83%86%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3-92a34e463821
+
+U-Net(セマンティックセグメンテーションの基礎となっている技術)の説明
+https://arxiv.org/pdf/1505.04597.pdf
+
