@@ -14,21 +14,12 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import torchvision.transforms as T
+import pfrl
 
 from PIL import ImageGrab
 from tqdm import tqdm
 
-
-from collections import namedtuple
-Transition = namedtuple("Transition", ("state", "action", "next_state", "reward"))
-
 WINDOW_NAME = "東方妖々夢　～ Perfect Cherry Blossom. ver 1.00"
-
-#ハイパーパラメータ
-GANMA = 0.99 #割引率
-NUM_EPISODE = 10000 #総試行回数
-BATCH_SIZE = 32
-CAPACITY = 10000
 
 SENDINPUT = ctypes.windll.user32.SendInput
 
@@ -62,120 +53,25 @@ class Input(ctypes.Structure):
     _fields_ = [("type", ctypes.c_ulong),
                 ("ii", Input_I)]
 
-class ReplayMemory:
-
-    def __init__(self, CAPACITY):
-        self.capacity = CAPACITY #メモリの最大長さ
-        self.memory = [] #経験を保存する変数
-        self.index = 0 #保存するindexを示す変数
-
-    def push(self, state, action, state_next, reward):
-        if len(self.memory) < self.capacity:
-            self.memory.append(None)
-        self.memory[self.index] = Transition(state, action, state_next, reward)
-        self.index = (self.index + 1) % self.capacity
-
-    def sample(self, batch_size):
-        return random.sample(self.memory, batch_size)
-
-    def __len__(self):
-        return len(self.memory)
-
-class Brain:
-
-    def __init__(self, num_states, num_actions):
-        self.num_actions = num_actions
-        self.memory = ReplayMemory(CAPACITY)
-        self.model = nn.Sequential()
-        self.model.add_module("fc1", nn.Linear(num_states, 32))
-        self.model.add_module("relu1", nn.ReLU())
-        self.model.add_module("fc2", nn.Linear(32, 32))
-        self.model.add_module("relu2", nn.ReLU())
-        self.model.add_module("fc3", nn.Linear(32, num_actions))
-
-        print(self.model)
-
-        self.optimizer = optim.Adam(self.model.parameters(), lr=0.0001)
-
-    def replay(self):
-
-        if len(self.memory) < BATCH_SIZE:
-            return
-
-        transitions = self.memory.sample(BATCH_SIZE)
-
-        batch = Transition(*zip(*transitions))
-
-        state_batch = torch.cat(batch.state)
-        action_batch = torch.cat(batch.action)
-        reward_batch = torch.cat(batch.reward)
-        non_final_next_states = torch.cat([s for s in batch.next_state if s is not None])
-
-        self.model.eval()
-
-        state_action_values = self.model(state_batch).gather(1, action_batch)
-
-        non_final_mask = torch.ByteTensor(tuple(map(lambda s:s is not None, batch.next_state)))
-        next_state_values = torch.zeros(BATCH_SIZE)
-
-        next_state_values[non_final_mask] = self.model(non_final_next_states).max(1)[0].detach()
-
-        expected_state_action_values = reward_batch+GANMA*next_state_values
-
-        self.model.train()
-
-        loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
-
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
-
-    def decide_action(self, state, episode):
-        epsilon = 0.5+(1/(episode+1))
-
-        if epsilon <= np.random.uniform(0, 1):
-            self.model.eval()
-            with torch.no_grad():
-                action = self.model(state).max(1)[1].view(1, 1)
-
-        else:
-            action = torch.LongTensor([[random.randrange(self.num_actions)]])
-
-        return action
-
-class Agent:
-
-    def __init__(self, num_states, num_actions):
-        self.brain = Brain(num_states, num_actions)
-
-    def update_q(self):
-        self.brain.replya()
-
-    def get_action(self, state, episode):
-        action = self.brain.decide_action(state, episode)
-        return action
-
-    def memorize(self, state, action, state_next, reward):
-        self.brain.memory.push(state, action, state_next, reward)
-
-class Environment:
-
+class Qfunction(torch.nn.Module):
     def __init__(self):
-        self.env = 
-        self.num_states = 
-        self.num_actions = 
+        print("Initializing DQN...")
+        print("Model Building")
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 16, 8, 2, 3)
+        self.conv2 = nn.Conv2d(16, 32, 5, 2, 2)
+        self.conv3 = nn.Conv2d(32, 64, 5, 2, 2)
+        self.l4 = nn.Linear(320, 5) #アクション数は5通り #320の部分を変更？
 
-        self.agent = Agent(self.num_states, self.num_actions)
+    def __call__(self, x):
+        h1 = F.relu(self.conv1(x))
+        h2 = F.relu(self.conv2(h1))
+        h3 = F.relu(self.conv3(h2))
+        h3 = h3.view(h3.size(0), -1)
+        return pfrl.action_value.DiscreteActionValue(self.l4(h3))
 
-    def run(self):
-        episode_10_list = np.zeros(10)
-        complete_episodes = 0
-        episode_final = Falseframes = []
-
-        for episode in range(NUM_EPISODE):
-            observation = 
-            state = observation
-            state = torch.
+def random_action():
+    return np.random.randint(0, 5)
 
 def presskey(hexKeyCode):
     extra = ctypes.c_ulong(0)
@@ -242,30 +138,120 @@ def screen_shot():
     img_template = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     #入力用画像
     img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    img = cv2.resize(img, dsize=(120, 160))
+    img = cv2.resize(img, dsize=(128, 160))
     cv2.imwrite("test.jpg", img=img)
 
     return img, img_template
 
+def deathcheck(img, img_d):
+    match_result_d = cv2.matchTemplate(img, img_d, cv2.TM_CCOEFF_NORMED)
+    death_check = np.column_stack(np.where(match_result_d >= 0.75))
+
+    return death_check
+
+def score(img, img_s, img_t, img_c, time_hit):
+    reward = 0
+    match_result_p = cv2.matchTemplate(img, img_s, cv2.TM_CCOEFF_NORMED)
+    match_result_t = cv2.matchTemplate(img, img_t, cv2.TM_CCOEFF_NORMED)
+    match_result_c = cv2.matchTemplate(img, img_c, cv2.TM_CCOEFF_NORMED)
+    p_check = np.column_stack(np.where(match_result_p >= 0.5))
+    t_check = np.column_stack(np.where(match_result_t >= 0.7))
+    c_check = np.column_stack(np.where(match_result_c >= 0.8))
+    if time.time() - time_hit > 3:
+        if len(p_check) >= 1:
+            print("The number of P: {}".format(len(p_check)))
+            reward += max(len(p_check)-previous_p_check, 0)
+            previous_p_check = len(p_check)
+        if len(t_check) >= 1:
+            print("The number of Ten: {}".format(len(t_check)))
+            reward += max(len(t_check)-previous_t_check, 0)
+            previous_t_check = len(t_check)
+        if len(c_check) >= 1:
+            print("Chapter finished")
+            cool_time = time.time()
+            if cool_time - previous_time > 5:
+                reward += 100
+                previous_time = cool_time
+
+    return reward
+
 def main():
+
+    #ハイパーパラメータ
+    GANMA = 0.99 #割引率
+    NUM_EPISODE = 10000 #総試行回数
+    MAX_EPISODE_LEN = 1000
+    BATCH_SIZE = 32
+    CAPACITY = 10000
+
+    #画像処理用
+    DEATHCHECK_FILE = "Death.png"
+    SCORE = "Score_4.png"
+    TEN = "ttt.png"
+    CHAPTER = "Chapter.png"
+    IMG_D = cv2.imread(DEATHCHECK_FILE, cv2.IMREAD_COLOR) #被弾確認用
+    IMG_S = cv2.imread(SCORE, cv2.IMREAD_COLOR) #P確認用
+    IMG_T = cv2.imread(TEN, cv2.IMREAD_COLOR) #点確認用
+    IMG_C = cv2.imread(CHAPTER, cv2.IMREAD_COLOR) #Chapter Finish確認用
+
+    #DQNのセットアップ
+    q_func = Qfunction()
+    #q_func.to_gpu(0)
+    optimizer = torch,optim.Adadelta(q_func.parameters(), rho=0.95, eps=1e-06)
+    explorer = pfrl.explorers.LinearDecayEpsilonGreedy(start_epsilon=1.0, end_epsilon=0.0, decay_steps=NUM_EPISODE*100, random_action_func=random_action)
+    replay_buffer = pfrl.replay_buffers.ReplayBuffer(capacity=10 ** 6)
+    phi = lambda x: x.astype(np.float32, copy=False)
+    agent = pfrl.agents.DQN(q_func, optimizer, replay_buffer, GANMA, explorer, gpu=0, replay_start_size=5000, minibatch_size=100, update_interval=50, target_update_interval=2000, phi=phi)
+    #agent.load("agent_TouhouAIDDQN_3000")
 
     try:
         command = 0
         reward = 0
         time_step = 0
         presskey(0x2c) #pressZ
-        for episode in range(1, NUM_EPISODE+1):
+        for i in range(1, NUM_EPISODE+1):
             time.sleep(1)
             commandstart(-1)
             time.sleep(1/60)
             commandend(-1)
-            print("episode: {}".format(episode))
+            print("a")
+            print("episode: {}".format(i))
             done = False
+            reset = False
             r = 0
             t = 0
-            time.sllep(1)
-            while not done:
-                img, img_template = screen_shot()
+            time_hit = time.time()
+            obs, _ = screen_shot()
+            time.sleep(1)
+            while True:
+                command = agent.act(obs)
+                print("b")
+                print(command)
+                commandstart(command)
+                obs, img_template = screen_shot()
+                death = deathcheck(img_template, IMG_D)
+                reset = t == MAX_EPISODE_LEN
+                if len(death) >= 1:
+                    done = True
+                    print("被弾")
+                    r = -100
+                    print("reward: {}".format(r))
+                elif reset:
+                    pass
+                else:
+                    r = score(img_template, IMG_S, IMG_T, IMG_C, time_hit)
+                    print("reward: {}".format(r))
+                    agent.observe(obs, r, done, reset)
+                if done or reset:
+                    time.sleep(1)
+                    commandend(command)
+                    commandstart(-1)
+                    time.sleep(1)
+                    commandend(-1) #リスタート用
+                    time.sleep(1)
+                    break
+                commandend(command)
+                t += 1
     except KeyboardInterrupt:
         sys.exit()
 
