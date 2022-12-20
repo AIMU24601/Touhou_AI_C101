@@ -23,6 +23,9 @@ WINDOW_NAME = "東方妖々夢　～ Perfect Cherry Blossom. ver 1.00"
 
 SENDINPUT = ctypes.windll.user32.SendInput
 
+global device
+device = torch.device("cuda")
+
 PUL = ctypes.POINTER(ctypes.c_ulong)
 class KeyBdInput(ctypes.Structure):
     _fields_ = [("wvk", ctypes.c_ushort),
@@ -117,11 +120,11 @@ def commandend(action):
     elif action == 4:
         releasekey(0xd0)#DOWN
 
-def screen_shot():
+def screen_shot(model):
     """画面を取得し入力とテンプレートマッチングに使う画像を返す関数
 
     Returns:
-        img: 入力用画像
+        output: 入力用画像
         img_template: テンプレートマッチング用画像
     """
     handle = win32gui.FindWindow(None, WINDOW_NAME)
@@ -131,17 +134,29 @@ def screen_shot():
     croped_image = grabed_image.crop(rect)
     croped_image = croped_image.crop((35, 42, 420, 490))
 
-    croped_image.save("screenshot.jpg")
+    #croped_image.save("screenshot.jpg")
 
     img = np.asarray(croped_image, dtype="uint8")
     #テンプレートマッチング用
     img_template = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     #入力用画像
-    img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    #img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    #img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     img = cv2.resize(img, dsize=(128, 160))
-    cv2.imwrite("test.jpg", img=img)
+    mean = [90.9, 72.69, 86.76]
+    std = [73.8, 70.29, 70.12]
+    model.eval()
+    t = T.Compose([T.ToTensor(), T.Normalize(mean, std)])
+    img = t(img)
+    img = img.unsqueeze(0)
+    model.to(device); img=img.to(device)
+    output = model(img)
+    output = torch.argmax(output, dim=1)
+    output = output.cpu().squeeze(0)
+    output = output.detach().numpy()
+    #cv2.imwrite("test.jpg", img=img)
 
-    return img, img_template
+    return output, img_template
 
 def deathcheck(img, img_d):
     match_result_d = cv2.matchTemplate(img, img_d, cv2.TM_CCOEFF_NORMED)
@@ -149,7 +164,7 @@ def deathcheck(img, img_d):
 
     return death_check
 
-def score(img, img_p, img_t, time_hit):
+def score(img, img_p, img_t, time_hit, previous_p_check, previous_t_check):
     reward = 0
     match_result_p = cv2.matchTemplate(img, img_p, cv2.TM_CCOEFF_NORMED)
     match_result_t = cv2.matchTemplate(img, img_t, cv2.TM_CCOEFF_NORMED)
@@ -173,11 +188,12 @@ def score(img, img_p, img_t, time_hit):
                 reward += 100
                 previous_time = cool_time
         """
-    return reward
+    return reward, previous_p_check, previous_t_check
 
-def reset():
+def retry():
     releasekey(0x2c)#releaseZ
     time.sleep(1)
+    Retry_check = False
     while Retry_check:
         Retry_check = RetryCheck()
         presskey(0x2c)
@@ -226,7 +242,10 @@ def reset():
     time.sleep(1/60)
     releasekey(0x2c)#装備選択
     #print("装備選択")
+    time.sleep(1)
     #ここまでリトライ処理
+
+    return None
 
 def RetryCheck():
     #あなたの腕前の画面に遷移しているかの確認
@@ -276,30 +295,33 @@ def main():
     #agent.load("agent_TouhouAIDDQN_3000")
 
     try:
+        model = torch.load("model/Unet-_mIoU-back-0.537.pt")
+
         command = 0
         reward = 0
         time_step = 0
-        for i in range(1, NUM_EPISODE+1):
+        previous_p_check = 0
+        previous_t_check = 0
+        time.sleep(1)
+        commandstart(-1)
+        time.sleep(1/60)
+        commandend(-1)
+        for episode in range(1, NUM_EPISODE+1):
             presskey(0x2c) #pressZ
-            time.sleep(1)
-            commandstart(-1)
-            time.sleep(1/60)
-            commandend(-1)
-            print("a")
-            print("episode: {}".format(i))
+            print("episode: {}".format(episode))
             done = False
             reset = False
             r = 0
             t = 0
             time_hit = time.time()
-            obs, _ = screen_shot()
+            obs, _ = screen_shot(model)
             time.sleep(1)
             while True:
+                print(time_step)
                 command = agent.act(obs)
-                print("b")
-                print(command)
+                #print(command)
                 commandstart(command)
-                obs, img_template = screen_shot()
+                obs, img_template = screen_shot(model)
                 death = deathcheck(img_template, IMG_D)
                 reset = t == MAX_EPISODE_LEN
                 if len(death) >= 1:
@@ -310,19 +332,23 @@ def main():
                 elif reset:
                     pass
                 else:
-                    r = score(img_template, IMG_P, IMG_T, time_hit)
+                    r, previous_p_check,previous_t_check = score(img_template, IMG_P, IMG_T, time_hit, previous_p_check,previous_t_check)
                     print("reward: {}".format(r))
                     agent.observe(obs, r, done, reset)
+                commandend(command)
                 if done or reset:
                     time.sleep(1)
-                    commandend(command)
-                    commandstart(-1)
-                    time.sleep(1)
-                    commandend(-1) #リスタート用
+                    retry()
                     time.sleep(1)
                     break
-                commandend(command)
                 t += 1
+            previous_p_check = 0
+            previous_t_check = 0
+            time_step += t
+            print("time step: {}, average time step: {}".format(t, time_step/episode))
+            if episode % 1000 == 0: #50エピソード毎にエージェントモデルを保存
+                print("model saved")
+                agent.save("agent_TouhouAIDQN_" + str(episode))
     except KeyboardInterrupt:
         sys.exit()
 
