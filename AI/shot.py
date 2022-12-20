@@ -43,7 +43,7 @@ def screen_shot():
     #入力用画像
     img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     img = cv2.resize(img, dsize=(128, 160))
-    cv2.imwrite("test.jpg", img=img)
+    cv2.imwrite("test.jpg", img=img_template)
 
     return img, img_template
 

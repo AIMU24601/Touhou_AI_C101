@@ -149,14 +149,14 @@ def deathcheck(img, img_d):
 
     return death_check
 
-def score(img, img_s, img_t, img_c, time_hit):
+def score(img, img_p, img_t, time_hit):
     reward = 0
-    match_result_p = cv2.matchTemplate(img, img_s, cv2.TM_CCOEFF_NORMED)
+    match_result_p = cv2.matchTemplate(img, img_p, cv2.TM_CCOEFF_NORMED)
     match_result_t = cv2.matchTemplate(img, img_t, cv2.TM_CCOEFF_NORMED)
-    match_result_c = cv2.matchTemplate(img, img_c, cv2.TM_CCOEFF_NORMED)
+    #match_result_c = cv2.matchTemplate(img, img_c, cv2.TM_CCOEFF_NORMED)
     p_check = np.column_stack(np.where(match_result_p >= 0.5))
     t_check = np.column_stack(np.where(match_result_t >= 0.7))
-    c_check = np.column_stack(np.where(match_result_c >= 0.8))
+    #c_check = np.column_stack(np.where(match_result_c >= 0.8))
     if time.time() - time_hit > 3:
         if len(p_check) >= 1:
             print("The number of P: {}".format(len(p_check)))
@@ -166,14 +166,85 @@ def score(img, img_s, img_t, img_c, time_hit):
             print("The number of Ten: {}".format(len(t_check)))
             reward += max(len(t_check)-previous_t_check, 0)
             previous_t_check = len(t_check)
-        if len(c_check) >= 1:
+        """if len(c_check) >= 1:
             print("Chapter finished")
             cool_time = time.time()
             if cool_time - previous_time > 5:
                 reward += 100
                 previous_time = cool_time
-
+        """
     return reward
+
+def reset():
+    releasekey(0x2c)#releaseZ
+    time.sleep(1)
+    while Retry_check:
+        Retry_check = RetryCheck()
+        presskey(0x2c)
+        time.sleep(1/60)
+        releasekey(0x2c)
+        time.sleep(1)
+    presskey(0x2c)
+    time.sleep(1/60)
+    releasekey(0x2c)
+    time.sleep(1)
+    presskey(0x2c)
+    time.sleep(1/60)
+    releasekey(0x2c)#コンテニューでいいえ
+    #print("いいえ")
+    time.sleep(3)
+    presskey(0x2c)
+    time.sleep(1/60)
+    releasekey(0x2c)#あなたの腕前から次へ
+    #print("腕前")
+    time.sleep(90/60)
+    presskey(0xcd)#RIGHT
+    time.sleep(1/60)
+    releasekey(0xcd)#RIGHT
+    time.sleep(10/60)
+    presskey(0x2c)
+    time.sleep(1/60)
+    releasekey(0x2c)#リプレイ保存でいいえ
+    #print("リプレイ")
+    time.sleep(2)
+    presskey(0x2c)
+    time.sleep(1/60)
+    releasekey(0x2c)#Start
+    #print("Start")
+    time.sleep(90/60)
+    presskey(0x2c)
+    time.sleep(1/60)
+    releasekey(0x2c)#入門を押す
+    #print("入門")
+    time.sleep(90/60)
+    presskey(0x2c)
+    time.sleep(1/60)
+    releasekey(0x2c)#自機選択
+    #print("自機選択")
+    time.sleep(90/60)
+    presskey(0x2c)
+    time.sleep(1/60)
+    releasekey(0x2c)#装備選択
+    #print("装備選択")
+    #ここまでリトライ処理
+
+def RetryCheck():
+    #あなたの腕前の画面に遷移しているかの確認
+    RETRYCHECKFILE = "images/udemae.png"
+    IMG_R = cv2.imread(RETRYCHECKFILE, cv2.IMREAD_COLOR)
+    X = 284
+    Y = 290
+    W = 670
+    H = 740 #撮影の座標指定
+    img = ImageGrab.grab((X, Y, W, H))
+    img = np.asarray(img, dtype="uint8")
+    img_1 = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    match_result_r = cv2.matchTemplate(img_1, IMG_R, cv2.TM_CCOEFF_NORMED)
+    retry_check = np.column_stack(np.where(match_result_r >= 0.75))
+    if len(retry_check) >= 1:
+        return True
+    else:
+        return False
 
 def main():
 
@@ -185,14 +256,14 @@ def main():
     CAPACITY = 10000
 
     #画像処理用
-    DEATHCHECK_FILE = "Death.png"
-    SCORE = "Score_4.png"
-    TEN = "ttt.png"
-    CHAPTER = "Chapter.png"
+    DEATHCHECK_FILE = "images/continue.png"
+    POWER = "images/p.png"
+    TEN = "images/t.png"
+    #CHAPER =
     IMG_D = cv2.imread(DEATHCHECK_FILE, cv2.IMREAD_COLOR) #被弾確認用
-    IMG_S = cv2.imread(SCORE, cv2.IMREAD_COLOR) #P確認用
+    IMG_P = cv2.imread(POWER, cv2.IMREAD_COLOR) #P確認用
     IMG_T = cv2.imread(TEN, cv2.IMREAD_COLOR) #点確認用
-    IMG_C = cv2.imread(CHAPTER, cv2.IMREAD_COLOR) #Chapter Finish確認用
+    #IMG_C = cv2.imread(CHAPTER, cv2.IMREAD_COLOR) #Chapter Finish確認用
 
     #DQNのセットアップ
     q_func = Qfunction()
@@ -208,8 +279,8 @@ def main():
         command = 0
         reward = 0
         time_step = 0
-        presskey(0x2c) #pressZ
         for i in range(1, NUM_EPISODE+1):
+            presskey(0x2c) #pressZ
             time.sleep(1)
             commandstart(-1)
             time.sleep(1/60)
@@ -239,7 +310,7 @@ def main():
                 elif reset:
                     pass
                 else:
-                    r = score(img_template, IMG_S, IMG_T, IMG_C, time_hit)
+                    r = score(img_template, IMG_P, IMG_T, time_hit)
                     print("reward: {}".format(r))
                     agent.observe(obs, r, done, reset)
                 if done or reset:
